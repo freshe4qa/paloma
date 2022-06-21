@@ -125,7 +125,7 @@ sed -i -e "s/^pruning-keep-every *=.*/pruning-keep-every = \"$pruning_keep_every
 sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"$pruning_interval\"/" $HOME/.paloma/config/app.toml
 
 # reset
-palomad tendermint unsafe-reset-all
+palomad tendermint unsafe-reset-all --home $HOME/.paloma
 
 
 # create service
