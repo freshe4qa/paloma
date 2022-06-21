@@ -45,8 +45,12 @@ if [ ! $NODENAME ]; then
 	read -p "Enter node name: " NODENAME
 	echo 'export NODENAME='$NODENAME >> $HOME/.bash_profile
 fi
-echo "export WALLET=wallet" >> $HOME/.bash_profile
-echo "export CHAIN_ID=paloma" >> $HOME/.bash_profile
+PALOMA_PORT=10
+if [ ! $WALLET ]; then
+	echo "export WALLET=wallet" >> $HOME/.bash_profile
+fi
+echo "export PALOMA_CHAIN_ID=paloma-testnet-4" >> $HOME/.bash_profile
+echo "export PALOMA_PORT=${PALOMA_PORT}" >> $HOME/.bash_profile
 source $HOME/.bash_profile
 
 # update
@@ -63,7 +67,7 @@ source $HOME/.bash_profile
         echo -e '\n\e[40m\e[92mSkipped Go installation\e[0m'
     else
         echo -e '\n\e[40m\e[92mStarting Go installation...\e[0m'
-        ver="1.18.1"
+        ver="1.18.2"
 cd $HOME
 wget "https://golang.org/dl/go$ver.linux-amd64.tar.gz"
 sudo rm -rf /usr/local/go
@@ -75,29 +79,33 @@ go version
     fi
 
 # download binary
-wget -qO - https://github.com/palomachain/paloma/releases/download/v0.1.0-alpha/paloma_0.1.0-alpha_Linux_x86_64v3.tar.gz | \
+wget -O - https://github.com/palomachain/paloma/releases/download/v0.2.3-prealpha/paloma_0.2.3-prealpha_Linux_x86_64v3.tar.gz | \
 sudo tar -C /usr/local/bin -xvzf - palomad
 sudo chmod +x /usr/local/bin/palomad
 sudo wget -P /usr/lib https://github.com/CosmWasm/wasmvm/raw/main/api/libwasmvm.x86_64.so
 
 # config
-palomad config chain-id $CHAIN_ID
+palomad config chain-id $PALOMA_CHAIN_ID
 palomad config keyring-backend test
+palomad config node tcp://localhost:${PALOMA_PORT}657
 
 # init
-palomad init $NODENAME --chain-id $CHAIN_ID
+palomad init $NODENAME --chain-id $PALOMA_CHAIN_ID
 
 # download genesis and addrbook
-wget -qO $HOME/.paloma/config/genesis.json "https://raw.githubusercontent.com/palomachain/testnet/master/livia/genesis.json"
-wget -qO $HOME/.paloma/config/addrbook.json "https://raw.githubusercontent.com/palomachain/testnet/master/livia/addrbook.json"
+wget -O ~/.paloma/config/genesis.json https://raw.githubusercontent.com/palomachain/testnet/master/paloma-testnet-4/genesis.json
+wget -O ~/.paloma/config/addrbook.json https://raw.githubusercontent.com/palomachain/testnet/master/paloma-testnet-4/addrbook.json
 
 # set minimum gas price
-sed -i -e "s/^minimum-gas-prices *=.*/minimum-gas-prices = \"0grain\"/" $HOME/.paloma/config/app.toml
+sed -i -e "s/^minimum-gas-prices *=.*/minimum-gas-prices = \"0ugrain\"/" $HOME/.paloma/config/app.toml
 
 # set peers and seeds
 SEEDS=""
-PEERS="223e39487e0e363833f19ead57c3bb98303730f9@116.202.112.175:26601,2e0623d133e8da778e379b01ea0b8cb477f5b346@135.181.116.109:38456,61db8ce4cf4e9c0cbbb9bfb4c90ae6d02c17d6bd@138.201.139.175:20456,eed0ef9a854fd601401d5484d64cb3e0b02a955b@144.126.135.27:46656,5cea05a8c5dffacd0ce022e1726734a0d8cbfdca@62.141.39.178:26656,1003cf3b68ddfd3a55bb20f5c6041c1efe2e52eb@65.21.143.79:21556,d8d619448fef295ac11463b834b4a169dbf8f9ba@135.181.47.192:26656,ebeca6a40fba2c3a3aa5a9c99d9222163bd6d4c6@95.216.154.164:26656,927cc47316c0530b54a711e601b14a1fb24c0153@62.171.128.66:26656"
+PEERS="a689a738bbb3f62b9548a527a23e89e0669bf990@134.209.109.171:26656,0b1069ced6f67579fb2a4b1f1913e51869812850@173.212.238.31:26656,705367a8a361f8ce86d60d564991e0f3a95f549d@35.184.103.87:26656,4ab3e9f2f25c741d13336c8b7f4ac45694a5bc00@34.135.148.102:26656,fb465466cf245e6be9607c00b8c79bb61a7f25d5@46.101.119.246:26656,aebc4e3a1b90d546bcd5c7ee23e12bab7aed9e53@137.184.178.183:26656,5190404f478fecfd48e1e8a6ea3df2d32c85a67f@149.102.155.181:26656,301938da656d6224fdd35f806b1d2b67d94d8d36@34.69.131.169:26656,7367f20644b42f83edfaf633d62a21a2af3238ca@185.249.225.121:26656,19fa9d5f250f1b3ecef9e5d9ba1580f1ecb1a8f0@176.57.189.36:26656"
 sed -i -e "s/^seeds *=.*/seeds = \"$SEEDS\"/; s/^persistent_peers *=.*/persistent_peers = \"$PEERS\"/" $HOME/.paloma/config/config.toml
+
+sed -i.bak -e "s%^proxy_app = \"tcp://127.0.0.1:26658\"%proxy_app = \"tcp://127.0.0.1:${PALOMA_PORT}658\"%; s%^laddr = \"tcp://127.0.0.1:26657\"%laddr = \"tcp://127.0.0.1:${PALOMA_PORT}657\"%; s%^pprof_laddr = \"localhost:6060\"%pprof_laddr = \"localhost:${PALOMA_PORT}060\"%; s%^laddr = \"tcp://0.0.0.0:26656\"%laddr = \"tcp://0.0.0.0:${PALOMA_PORT}656\"%; s%^prometheus_listen_addr = \":26660\"%prometheus_listen_addr = \":${PALOMA_PORT}660\"%" $HOME/.paloma/config/config.toml
+sed -i.bak -e "s%^address = \"tcp://0.0.0.0:1317\"%address = \"tcp://0.0.0.0:${PALOMA_PORT}317\"%; s%^address = \":8080\"%address = \":${PALOMA_PORT}080\"%; s%^address = \"0.0.0.0:9090\"%address = \"0.0.0.0:${PALOMA_PORT}090\"%; s%^address = \"0.0.0.0:9091\"%address = \"0.0.0.0:${PALOMA_PORT}091\"%" $HOME/.paloma/config/app.toml
 
 #index
 indexer="null"
@@ -148,10 +156,10 @@ palomad keys add $WALLET
 echo "============================================================"
 echo "Save address and mnemonic"
 echo "============================================================"
-WALLET_ADDRESS=$(palomad keys show $WALLET -a)
-VALOPER_ADDRESS=$(palomad keys show $WALLET --bech val -a)
-echo 'export WALLET_ADDRESS='${WALLET_ADDRESS} >> $HOME/.bash_profile
-echo 'export VALOPER_ADDRESS='${VALOPER_ADDRESS} >> $HOME/.bash_profile
+PALOMA_WALLET_ADDRESS=$(palomad keys show $WALLET -a)
+PALOMA_VALOPER_ADDRESS=$(palomad keys show $WALLET --bech val -a)
+echo 'export PALOMA_WALLET_ADDRESS='${PALOMA_WALLET_ADDRESS} >> $HOME/.bash_profile
+echo 'export PALOMA_VALOPER_ADDRESS='${PALOMA_VALOPER_ADDRESS} >> $HOME/.bash_profile
 source $HOME/.bash_profile
 
 break
@@ -160,7 +168,7 @@ break
 
 "Create Validator")
 palomad tx staking create-validator \
-  --amount 100000000grain \
+  --amount 100000ugrain \
   --from $WALLET \
   --commission-max-change-rate "0.01" \
   --commission-max-rate "0.2" \
@@ -168,7 +176,8 @@ palomad tx staking create-validator \
   --min-self-delegation "1" \
   --pubkey  $(palomad tendermint show-validator) \
   --moniker $NODENAME \
-  --chain-id $CHAIN_ID
+  --chain-id $PALOMA_CHAIN_ID \
+ 
   
 break
 ;;
