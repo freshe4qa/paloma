@@ -49,7 +49,7 @@ PALOMA_PORT=10
 if [ ! $WALLET ]; then
 	echo "export WALLET=wallet" >> $HOME/.bash_profile
 fi
-echo "export PALOMA_CHAIN_ID=paloma-testnet-4" >> $HOME/.bash_profile
+echo "export PALOMA_CHAIN_ID=paloma-testnet-5" >> $HOME/.bash_profile
 echo "export PALOMA_PORT=${PALOMA_PORT}" >> $HOME/.bash_profile
 source $HOME/.bash_profile
 
@@ -79,7 +79,7 @@ go version
     fi
 
 # download binary
-wget -O - https://github.com/palomachain/paloma/releases/download/v0.2.3-prealpha/paloma_0.2.3-prealpha_Linux_x86_64v3.tar.gz | \
+wget -O - https://github.com/palomachain/paloma/releases/download/v0.2.4-prealpha/paloma_0.2.4-prealpha_Linux_x86_64.tar.gz | \
 sudo tar -C /usr/local/bin -xvzf - palomad
 sudo chmod +x /usr/local/bin/palomad
 sudo wget -P /usr/lib https://github.com/CosmWasm/wasmvm/raw/main/api/libwasmvm.x86_64.so
@@ -93,15 +93,15 @@ palomad config node tcp://localhost:${PALOMA_PORT}657
 palomad init $NODENAME --chain-id $PALOMA_CHAIN_ID
 
 # download genesis and addrbook
-wget -O ~/.paloma/config/genesis.json https://raw.githubusercontent.com/palomachain/testnet/master/paloma-testnet-4/genesis.json
-wget -O ~/.paloma/config/addrbook.json https://raw.githubusercontent.com/palomachain/testnet/master/paloma-testnet-4/addrbook.json
+wget -O ~/.paloma/config/genesis.json https://raw.githubusercontent.com/palomachain/testnet/master/paloma-testnet-5/genesis.json
+wget -O ~/.paloma/config/addrbook.json https://raw.githubusercontent.com/palomachain/testnet/master/paloma-testnet-5/addrbook.json
 
 # set minimum gas price
 sed -i -e "s/^minimum-gas-prices *=.*/minimum-gas-prices = \"0ugrain\"/" $HOME/.paloma/config/app.toml
 
 # set peers and seeds
 SEEDS=""
-PEERS="a689a738bbb3f62b9548a527a23e89e0669bf990@134.209.109.171:26656,0b1069ced6f67579fb2a4b1f1913e51869812850@173.212.238.31:26656,705367a8a361f8ce86d60d564991e0f3a95f549d@35.184.103.87:26656,4ab3e9f2f25c741d13336c8b7f4ac45694a5bc00@34.135.148.102:26656,fb465466cf245e6be9607c00b8c79bb61a7f25d5@46.101.119.246:26656,aebc4e3a1b90d546bcd5c7ee23e12bab7aed9e53@137.184.178.183:26656,5190404f478fecfd48e1e8a6ea3df2d32c85a67f@149.102.155.181:26656,301938da656d6224fdd35f806b1d2b67d94d8d36@34.69.131.169:26656,7367f20644b42f83edfaf633d62a21a2af3238ca@185.249.225.121:26656,19fa9d5f250f1b3ecef9e5d9ba1580f1ecb1a8f0@176.57.189.36:26656"
+PEERS="fae84ec72a6f686d76096053e0532a65b69e5228@143.198.169.111:26656,3a06e1d98f831963a09a16561c4125e4eec5ed06@195.3.223.33:30656,f9d0db52347811f07b0aab4047099281ed042533@88.208.57.200:36656,e1efddf3b39f1953590f8264d30d71d1a1313061@164.90.134.139:26656,301938da656d6224fdd35f806b1d2b67d94d8d36@34.69.131.169:26656,5d8e547ebe3c6b62a043f52ffc379898ce3ef578@128.199.229.55:36416,3a06e1d98f831963a09a16561c4125e4eec5ed06@195.3.223.33:30656,eb33a25834f0368c91bdc33c6178efa45b48e15f@142.93.222.212:36416,22ce759d389de8c0ef14710916ddba05246bce31@35.232.220.104:26656,368f268011d047a25ba1e658b29d8d68695eaefe@20.56.69.130:26656"
 sed -i -e "s/^seeds *=.*/seeds = \"$SEEDS\"/; s/^persistent_peers *=.*/persistent_peers = \"$PEERS\"/" $HOME/.paloma/config/config.toml
 
 sed -i.bak -e "s%^proxy_app = \"tcp://127.0.0.1:26658\"%proxy_app = \"tcp://127.0.0.1:${PALOMA_PORT}658\"%; s%^laddr = \"tcp://127.0.0.1:26657\"%laddr = \"tcp://127.0.0.1:${PALOMA_PORT}657\"%; s%^pprof_laddr = \"localhost:6060\"%pprof_laddr = \"localhost:${PALOMA_PORT}060\"%; s%^laddr = \"tcp://0.0.0.0:26656\"%laddr = \"tcp://0.0.0.0:${PALOMA_PORT}656\"%; s%^prometheus_listen_addr = \":26660\"%prometheus_listen_addr = \":${PALOMA_PORT}660\"%" $HOME/.paloma/config/config.toml
